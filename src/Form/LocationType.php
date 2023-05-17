@@ -16,7 +16,7 @@ class LocationType extends AbstractType
             ->add('locationName', TextType::class, [
                 'label' => 'Localisation',
                 'attr' => [
-                    'placeholder' => 'Entrer une localisation',
+                    'placeholder' => 'Entrer une ville',
                 ],
             ])
             ->add('submit', SubmitType::class, [
@@ -28,7 +28,6 @@ class LocationType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            // Configure your form options here
         ]);
     }
 }
