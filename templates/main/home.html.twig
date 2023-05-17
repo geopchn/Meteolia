@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Meteolia</h1>
+
+    <section>
+        {{ form_start(form) }}
+        {{ form_row(form.locationName) }}
+        {{ form_end(form) }}
+    </section>
+
+{% endblock %}
