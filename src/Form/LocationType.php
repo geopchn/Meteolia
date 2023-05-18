@@ -17,6 +17,7 @@ class LocationType extends AbstractType
                 'label' => 'Localisation',
                 'attr' => [
                     'placeholder' => 'Entrer une ville',
+                    'class' => "",
                 ],
             ])
             ->add('submit', SubmitType::class, [
