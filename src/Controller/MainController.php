@@ -7,8 +7,10 @@ use App\Services\WeatherImageService;
 use App\Services\WeatherApiService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -26,12 +28,12 @@ class MainController extends AbstractController
 
             $data = $form->getData();
             $locationName = $data['locationName'];
-            $config = $parameterBag->get('weather');
+            $configCache = $parameterBag->get('cache');
 
-            $cacheKey = $config['cache']['prefix'].$locationName;
+            $cacheKey = $configCache['prefix'].$locationName;
 
-            $weatherResult = $cache->get($cacheKey, function (ItemInterface $item) use ($weatherService, $locationName, $config) {
-                $item->expiresAfter($config['cache']['ttl']);
+            $weatherResult = $cache->get($cacheKey, function (ItemInterface $item) use ($weatherService, $locationName, $configCache) {
+                $item->expiresAfter($configCache['ttl']);
                 try {
                     return $weatherService->getWeatherByCity($locationName);
                 }catch (\Exception $e) {
@@ -44,8 +46,12 @@ class MainController extends AbstractController
                 return $this->redirectToRoute('main_home');
             }
 
-            $imageService->generate($weatherResult);
+            $imagePath = $imageService->generate($weatherResult);
+            $response = new BinaryFileResponse($imagePath);
+            $fileName = $weatherResult['name'] . '_weather.png';
+            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName);
 
+            return $response;
         }
 
         return $this->render('main/home.html.twig', [

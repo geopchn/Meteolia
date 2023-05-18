@@ -15,7 +15,6 @@ class WeatherImageService
     const KEY_TEMPERATURE = 'temp';
     const TEMP_POSITION_Y = 400;
     const DATE_MARGIN_TOP = 50;
-    const TEXT_OPACITY = 0;
 
     private string $projectDir;
     private array $config;
@@ -27,7 +26,7 @@ class WeatherImageService
         $this->config = $parameterBag->get('image');
     }
 
-    public function generate(array $weather): void
+    public function generate(array $weather): string
     {
         $backgroundImage = imagecreatefrompng($this->projectDir.'/public/assets/images/backgrounds/blue.png');
 
@@ -36,9 +35,13 @@ class WeatherImageService
         $this->addTemperatureText($backgroundImage, $weather);
         $this->addLocationText($backgroundImage, $weather);
 
-        imagepng($backgroundImage, $this->projectDir.'/public/images-weather/weather.png');
+        $imagePath = $this->projectDir. $this->config['uploadDir'] . 'weather.png';
+
+        imagepng($backgroundImage, $imagePath);
 
         imagedestroy($backgroundImage);
+
+        return $imagePath;
     }
 
     public function addDateText(GdImage|bool $backgroundImage): void
@@ -47,13 +50,10 @@ class WeatherImageService
         $fontSize = $this->getFontConfig(WeatherImageService::KEY_DATE)['size'];
         $textY = WeatherImageService::DATE_MARGIN_TOP;
 
-        $date = new DateTime();
-        $formatter = new IntlDateFormatter('fr_FR', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
-        $formatter->setPattern('EEEE d MMMM');
-        $dateFormatted =  ucfirst($formatter->format($date));
+        $dateFormatted = $this->getFormattedDate();
 
         $textX = $this->getXTextCenter($fontSize, $font, $dateFormatted, $backgroundImage);
-        $textColor = imagecolorallocatealpha($backgroundImage, 255, 255, 255, WeatherImageService::TEXT_OPACITY);
+        $textColor = imagecolorallocate($backgroundImage, 255, 255, 255);
 
         imagettftext($backgroundImage, $fontSize, 0, $textX, $textY, $textColor, $font, $dateFormatted);
     }
@@ -80,7 +80,7 @@ class WeatherImageService
         $textX = $this->getXTextCenter($fontSize, $font, $temp, $backgroundImage);
         $textY = WeatherImageService::TEMP_POSITION_Y;
 
-        $textColor = imagecolorallocatealpha($backgroundImage, 255, 255, 255, WeatherImageService::TEXT_OPACITY);
+        $textColor = imagecolorallocate($backgroundImage, 255, 255, 255);
 
         imagettftext($backgroundImage, $fontSize, 0, $textX, $textY, $textColor, $font, $temp);
     }
@@ -93,7 +93,7 @@ class WeatherImageService
         $city = $weather['name'];
 
         $textX = $this->getXTextCenter($fontSize, $font, $city, $backgroundImage);
-        $textColor = imagecolorallocatealpha($backgroundImage, 255, 255, 255, WeatherImageService::TEXT_OPACITY);
+        $textColor = imagecolorallocate($backgroundImage, 255, 255, 255);
 
         imagettftext($backgroundImage, $fontSize, 0, $textX, $textY, $textColor, $font, $city);
     }
@@ -120,9 +120,17 @@ class WeatherImageService
     private function getFontConfig(string $type): array
     {
         return [
-            'font' => $this->projectDir . $this->config[$type]['font'],
-            'size' => $this->config[$type]['size']
+            'font' => $this->projectDir . $this->config['elements'][$type]['font'],
+            'size' => $this->config['elements'][$type]['size']
         ];
+    }
+
+    public function getFormattedDate(): string
+    {
+        $date = new DateTime();
+        $formatter = new IntlDateFormatter('fr_FR', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
+        $formatter->setPattern('EEEE d MMMM');
+        return ucfirst($formatter->format($date));
     }
 
 }
