@@ -6,7 +6,7 @@ use Exception;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class WeatherService
+class WeatherApiService
 {
     private HttpClientInterface $httpClient;
     private array $config;
@@ -22,15 +22,17 @@ class WeatherService
     {
         try {
             $coordinates = $this->getCoordinatesByCity($city);
-        } catch (Exception $e) {
+        } catch (Exception) {
             throw new Exception('La localisation n\'a pas été trouvée');
         }
 
         try {
             $weather = $this->getWeatherByCoordinates($coordinates['lat'], $coordinates['lon']);
-        } catch (Exception $e) {
+        } catch (Exception) {
             throw new Exception('Erreur lors de la récupération des données météo');
         }
+
+        $weather['name'] = $coordinates['name'];
 
         return $weather;
     }
@@ -45,6 +47,7 @@ class WeatherService
         $coordinatesData = $this->requestToApi($this->config['endpoints']['geocoding'], $query);
 
         return [
+            'name' => $coordinatesData[0]['name'],
             'lat' => $coordinatesData[0]['lat'],
             'lon' => $coordinatesData[0]['lon'],
         ];

@@ -3,8 +3,10 @@
 namespace App\Controller;
 
 use App\Form\LocationType;
-use App\Services\WeatherService;
+use App\Services\WeatherImageService;
+use App\Services\WeatherApiService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -14,7 +16,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 class MainController extends AbstractController
 {
     #[Route('/', name: 'main_home')]
-    public function home(Request $request, WeatherService $weatherService, CacheInterface $cache): Response
+    public function home(Request $request, WeatherApiService $weatherService, WeatherImageService $imageService, CacheInterface $cache, ParameterBagInterface $parameterBag): Response
     {
         $form = $this->createForm(LocationType::class);
 
@@ -24,11 +26,12 @@ class MainController extends AbstractController
 
             $data = $form->getData();
             $locationName = $data['locationName'];
+            $config = $parameterBag->get('weather');
 
-            $cacheKey = 'weather_data_'.$locationName;
+            $cacheKey = $config['cache']['prefix'].$locationName;
 
-            $weatherResult = $cache->get($cacheKey, function (ItemInterface $item) use ($weatherService, $locationName) {
-                $item->expiresAfter(7200);
+            $weatherResult = $cache->get($cacheKey, function (ItemInterface $item) use ($weatherService, $locationName, $config) {
+                $item->expiresAfter($config['cache']['ttl']);
                 try {
                     return $weatherService->getWeatherByCity($locationName);
                 }catch (\Exception $e) {
@@ -36,10 +39,12 @@ class MainController extends AbstractController
                 }
             });
 
-            if (!is_array($weatherResult) ) {
-                $this->addFlash('success', $weatherResult);
+            if (!is_array($weatherResult)) {
+                $this->addFlash('error', $weatherResult);
                 return $this->redirectToRoute('main_home');
             }
+
+            $imageService->generate($weatherResult);
 
         }
 

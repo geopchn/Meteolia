@@ -4,7 +4,21 @@ parameters:
         key: '%env(WEATHER_API_KEY)%'
         endpoints:
             geocoding: "/geo/1.0/direct"
-            weather: "/daa/2.5/weather"
+            weather: "/data/2.5/weather"
+        cache:
+            prefix: "weather_data_"
+            ttl: 7200
+    image:
+        date:
+            font: '/public/assets/fonts/Roboto-Light.ttf'
+            size: 20
+        temp:
+            font: '/public/assets/fonts/Roboto-Bold.ttf'
+            size: 30
+        city:
+            font: '/public/assets/fonts/Roboto-Medium.ttf'
+            size: 25
+
 
 services:
     _defaults:
