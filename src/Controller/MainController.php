@@ -24,38 +24,42 @@ class MainController extends AbstractController
 
         $form->handleRequest($request);
 
-        if ($form->isSubmitted()) {
-
-            $data = $form->getData();
-            $locationName = $data['locationName'];
-            $configCache = $parameterBag->get('cache');
-
-            $cacheKey = $configCache['prefix'].$locationName;
-
-            $weatherResult = $cache->get($cacheKey, function (ItemInterface $item) use ($weatherService, $locationName, $configCache) {
-                $item->expiresAfter($configCache['ttl']);
-                try {
-                    return $weatherService->getWeatherByCity($locationName);
-                }catch (\Exception $e) {
-                    return $e->getMessage();
-                }
-            });
-
-            if (!is_array($weatherResult)) {
-                $this->addFlash('error', $weatherResult);
-                return $this->redirectToRoute('main_home');
-            }
-
-            $imagePath = $imageService->generate($weatherResult);
-            $response = new BinaryFileResponse($imagePath);
-            $fileName = $weatherResult['name'] . '_weather.png';
-            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName);
-
-            return $response;
+        if (!$form->isSubmitted()) {
+            return $this->render('main/home.html.twig', [
+            'form' => $form->createView(), ]);
         }
 
-        return $this->render('main/home.html.twig', [
-            'form' => $form->createView(),
-        ]);
+        $data = $form->getData();
+        $locationName = $data['locationName'];
+
+        if ($locationName === null) {
+            $this->addFlash('error', 'Veuillez entrer une localisation');
+            return $this->redirectToRoute('main_home');
+        }
+
+        $configCache = $parameterBag->get('cache');
+        $cacheKey = $configCache['prefix'].$locationName;
+
+        $weatherResult = $cache->get($cacheKey, function (ItemInterface $item) use ($weatherService, $locationName, $configCache) {
+            $item->expiresAfter($configCache['ttl']);
+            try {
+                return $weatherService->getWeatherByCity($locationName);
+            }catch (\Exception $e) {
+                return $e->getMessage();
+            }
+        });
+
+        if (!is_array($weatherResult)) {
+            $this->addFlash('error', $weatherResult);
+            return $this->redirectToRoute('main_home');
+        }
+
+        $imagePath = $imageService->generate($weatherResult);
+        $fileName = $weatherResult['name'] . $parameterBag->get('image')['fileSuffix'];
+
+        $response = new BinaryFileResponse($imagePath);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $imageService->formatFileName($fileName));
+
+        return $response;
     }
 }

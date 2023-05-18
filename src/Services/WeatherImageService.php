@@ -28,7 +28,7 @@ class WeatherImageService
 
     public function generate(array $weather): string
     {
-        $backgroundImage = imagecreatefrompng($this->projectDir.'/public/assets/images/backgrounds/blue.png');
+        $backgroundImage = imagecreatefrompng($this->projectDir.'/public/assets/images/backgrounds/' . $this->getWeatherBackground($weather));
 
         $this->addDateText($backgroundImage);
         $this->addWeatherIcon($backgroundImage, $weather);
@@ -100,11 +100,25 @@ class WeatherImageService
 
     private function getWeatherIconName(array $weather): string
     {
+        $weatherCondition = $weather['weather'][0]['main'];
+
+        return match ($weatherCondition) {
+            'Clear' => 'sun.png',
+            'Rain' => 'rain.png',
+            'Snow' => 'snow.png',
+            'Thunderstorm' => 'thunder.png',
+            default => 'cloud.png',
+        };
+    }
+
+    private function getWeatherBackground(array $weather): string
+    {
         if ($weather['weather'][0]['main'] === 'Clear'){
-            $weatherIconName = 'sun.png';
+            $weatherIconName = 'blue.png';
         } else {
-            $weatherIconName = 'cloud.png';
+            $weatherIconName = 'grey.png';
         }
+
         return $weatherIconName;
     }
 
@@ -131,6 +145,15 @@ class WeatherImageService
         $formatter = new IntlDateFormatter('fr_FR', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
         $formatter->setPattern('EEEE d MMMM');
         return ucfirst($formatter->format($date));
+    }
+
+    public function formatFileName(string $fileName): string {
+
+        $fileName = strtolower($fileName);
+        $fileName = str_replace(' ', '_', $fileName);
+        $fileName = trim($fileName, '_');
+
+        return $fileName;
     }
 
 }
