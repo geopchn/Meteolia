@@ -21,34 +21,32 @@ class WeatherImageService
 
     public function __construct(KernelInterface $appKernel, ParameterBagInterface $parameterBag)
     {
-        setlocale(LC_TIME, 'fr_FR.utf8');
         $this->projectDir = $appKernel->getProjectDir();
         $this->config = $parameterBag->get('image');
     }
 
-    public function generate(array $weather): string
+    public function generate(string $weatherCondition, float $temperature, string $locationName ): string
     {
-        $backgroundImage = imagecreatefrompng($this->projectDir.'/public/assets/images/backgrounds/' . $this->getWeatherBackground($weather));
+        $backgroundImage = imagecreatefrompng($this->projectDir.'/public/assets/images/backgrounds/' . $this->getWeatherBackground($weatherCondition));
 
         $this->addDateText($backgroundImage);
-        $this->addWeatherIcon($backgroundImage, $weather);
-        $this->addTemperatureText($backgroundImage, $weather);
-        $this->addLocationText($backgroundImage, $weather);
+        $this->addWeatherIcon($backgroundImage, $weatherCondition);
+        $this->addTemperatureText($backgroundImage, $temperature);
+        $this->addLocationText($backgroundImage, $locationName);
 
         $imagePath = $this->projectDir. $this->config['uploadDir'] . 'weather.png';
 
         imagepng($backgroundImage, $imagePath);
-
         imagedestroy($backgroundImage);
 
         return $imagePath;
     }
 
-    public function addDateText(GdImage|bool $backgroundImage): void
+    private function addDateText(GdImage $backgroundImage): void
     {
-        $font = $this->getFontConfig(WeatherImageService::KEY_DATE)['font'];
-        $fontSize = $this->getFontConfig(WeatherImageService::KEY_DATE)['size'];
-        $textY = WeatherImageService::DATE_MARGIN_TOP;
+        $font = $this->getFontConfig(self::KEY_DATE)['font'];
+        $fontSize = $this->getFontConfig(self::KEY_DATE)['size'];
+        $textY = self::DATE_MARGIN_TOP;
 
         $dateFormatted = $this->getFormattedDate();
 
@@ -58,9 +56,9 @@ class WeatherImageService
         imagettftext($backgroundImage, $fontSize, 0, $textX, $textY, $textColor, $font, $dateFormatted);
     }
 
-    private function addWeatherIcon(GdImage|bool $backgroundImage, array $weather): void
+    private function addWeatherIcon(GdImage $backgroundImage, string $weatherCondition): void
     {
-        $weatherIconName = $this->getWeatherIconName($weather);
+        $weatherIconName = $this->getWeatherIconName($weatherCondition);
         $weatherImage = imagecreatefrompng($this->projectDir.'/public/assets/images/weather-icons/'.$weatherIconName);
 
         $imageX = (imagesx($backgroundImage) - imagesx($weatherImage)) / 2;
@@ -70,27 +68,25 @@ class WeatherImageService
         imagedestroy($weatherImage);
     }
 
-    private function addTemperatureText(GdImage|bool $backgroundImage, array $weather): void
+    private function addTemperatureText(GdImage $backgroundImage, float $temperature): void
     {
-        $font = $this->getFontConfig(WeatherImageService::KEY_TEMPERATURE)['font'];
-        $fontSize = $this->getFontConfig(WeatherImageService::KEY_TEMPERATURE)['size'];
-        $temp = $weather['main']['temp'];
-        $temp = round($temp) . '°C';
+        $font = $this->getFontConfig(self::KEY_TEMPERATURE)['font'];
+        $fontSize = $this->getFontConfig(self::KEY_TEMPERATURE)['size'];
+        $temperature = round($temperature) . '°C';
 
-        $textX = $this->getXTextCenter($fontSize, $font, $temp, $backgroundImage);
-        $textY = WeatherImageService::TEMP_POSITION_Y;
+        $textX = $this->getXTextCenter($fontSize, $font, $temperature, $backgroundImage);
+        $textY = self::TEMP_POSITION_Y;
 
         $textColor = imagecolorallocate($backgroundImage, 255, 255, 255);
 
-        imagettftext($backgroundImage, $fontSize, 0, $textX, $textY, $textColor, $font, $temp);
+        imagettftext($backgroundImage, $fontSize, 0, $textX, $textY, $textColor, $font, $temperature);
     }
 
-    private function addLocationText(\GdImage|bool $backgroundImage, array $weather): void
+    private function addLocationText(GdImage $backgroundImage, string $city): void
     {
-        $font = $this->getFontConfig(WeatherImageService::KEY_CITY)['font'];
-        $fontSize = $this->getFontConfig(WeatherImageService::KEY_CITY)['size'];
+        $font = $this->getFontConfig(self::KEY_CITY)['font'];
+        $fontSize = $this->getFontConfig(self::KEY_CITY)['size'];
         $textY = imagesx($backgroundImage) - 50;
-        $city = $weather['name'];
 
         $textX = $this->getXTextCenter($fontSize, $font, $city, $backgroundImage);
         $textColor = imagecolorallocate($backgroundImage, 255, 255, 255);
@@ -98,10 +94,8 @@ class WeatherImageService
         imagettftext($backgroundImage, $fontSize, 0, $textX, $textY, $textColor, $font, $city);
     }
 
-    private function getWeatherIconName(array $weather): string
+    private function getWeatherIconName(string $weatherCondition): string
     {
-        $weatherCondition = $weather['weather'][0]['main'];
-
         return match ($weatherCondition) {
             'Clear' => 'sun.png',
             'Rain' => 'rain.png',
@@ -111,9 +105,9 @@ class WeatherImageService
         };
     }
 
-    private function getWeatherBackground(array $weather): string
+    private function getWeatherBackground(string $weatherCondition): string
     {
-        if ($weather['weather'][0]['main'] === 'Clear'){
+        if ($weatherCondition === 'Clear'){
             $weatherIconName = 'blue.png';
         } else {
             $weatherIconName = 'grey.png';
@@ -122,7 +116,7 @@ class WeatherImageService
         return $weatherIconName;
     }
 
-    public function getXTextCenter(int $fontSize, string $font, string $text, \GdImage|bool $backgroundImage): int|float
+    private function getXTextCenter(int $fontSize, string $font, string $text, \GdImage|bool $backgroundImage): int|float
     {
         $textBoundingBox = imagettfbbox($fontSize, 0, $font, $text);
         $textWidth = $textBoundingBox[2] - $textBoundingBox[0];
@@ -139,7 +133,7 @@ class WeatherImageService
         ];
     }
 
-    public function getFormattedDate(): string
+    private function getFormattedDate(): string
     {
         $date = new DateTime();
         $formatter = new IntlDateFormatter('fr_FR', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
@@ -147,8 +141,8 @@ class WeatherImageService
         return ucfirst($formatter->format($date));
     }
 
-    public function formatFileName(string $fileName): string {
-
+    public function formatFileName(string $fileName): string
+    {
         $fileName = strtolower($fileName);
         $fileName = str_replace(' ', '_', $fileName);
         $fileName = trim($fileName, '_');

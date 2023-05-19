@@ -21,7 +21,6 @@ class MainController extends AbstractController
     public function home(Request $request, WeatherApiService $weatherService, WeatherImageService $imageService, CacheInterface $cache, ParameterBagInterface $parameterBag): Response
     {
         $form = $this->createForm(LocationType::class);
-
         $form->handleRequest($request);
 
         if (!$form->isSubmitted()) {
@@ -54,7 +53,7 @@ class MainController extends AbstractController
             return $this->redirectToRoute('main_home');
         }
 
-        $imagePath = $imageService->generate($weatherResult);
+        $imagePath = $imageService->generate($weatherResult['weather'][0]['main'], $weatherResult['main']['temp'], $weatherResult['name'] );
         $fileName = $weatherResult['name'] . $parameterBag->get('image')['fileSuffix'];
 
         $response = new BinaryFileResponse($imagePath);

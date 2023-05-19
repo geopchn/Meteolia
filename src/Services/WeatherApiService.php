@@ -37,7 +37,7 @@ class WeatherApiService
         return $weather;
     }
 
-    public function getCoordinatesByCity(string $city): array
+    private function getCoordinatesByCity(string $city): array
     {
         $query = [
             'q' => $city,
@@ -53,7 +53,7 @@ class WeatherApiService
         ];
     }
 
-    public function getWeatherByCoordinates(float $lat, float $lon): array
+    private function getWeatherByCoordinates(float $lat, float $lon): array
     {
         $query = [
             'lat' => $lat,
@@ -64,7 +64,7 @@ class WeatherApiService
         return $this->requestToApi($this->config['endpoints']['weather'], $query);
     }
 
-    public function requestToApi(string $endpoint, array $query): array
+    private function requestToApi(string $endpoint, array $query): array
     {
         $query['appid'] = $this->config['key'];
 

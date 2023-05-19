@@ -4,13 +4,21 @@
     box-sizing: border-box;
 }
 
+:root {
+    --blue-primary: #D3E1F0;
+    --blue-secondary: #044FB8;
+    --blue-background-start: #021B79;
+    --blue-background-end: #0575E6;
+    --blue-light: #044FB8;
+}
+
 body {
     font-family: 'Nunito', sans-serif;
     display: flex;
     justify-content: center;
-    background: #0575E6;
-    background: -webkit-linear-gradient(to right, #021B79, #0575E6);
-    background: linear-gradient(to right, #021B79, #0575E6);
+    background: var(--blue-background-end);
+    background: -webkit-linear-gradient(to right, var(--blue-background-start), var(--blue-background-end));
+    background: linear-gradient(to right, var(--blue-background-start), var(--blue-background-end));
     color: white;
 }
 
@@ -47,9 +55,10 @@ button {
     font-size: 1.2rem;
     border-radius: 5px;
     border: none;
-    background-color: #d3e1f0;
-    color: #044FB8;
+    background-color: var(--blue-primary);
+    color: var(--blue-light);
     cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 button:hover {
@@ -60,8 +69,8 @@ button:hover {
     padding: 1rem;
     margin-bottom: 1rem;
     border-radius: 5px;
-    background-color: #d3e1f0;
-    color: #044FB8;
+    background-color: var(--blue-primary);
+    color: var(--blue-light);
 }
 
 @media screen and (max-width: 1200px) {

@@ -18,6 +18,7 @@ class LocationType extends AbstractType
                 'attr' => [
                     'placeholder' => 'Entrer une ville',
                     'class' => "",
+                    'maxlength' => '58',
                 ],
             ])
             ->add('submit', SubmitType::class, [
